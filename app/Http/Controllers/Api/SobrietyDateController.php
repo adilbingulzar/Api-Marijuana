@@ -80,7 +80,6 @@ class SobrietyDateController extends Controller
                 'message' => 'Sobriety date created successfully',
                 'data' => $sobrietyDate
             ], 201);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -153,10 +152,6 @@ class SobrietyDateController extends Controller
     public function update(Request $request, string $deviceId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'date' => 'required|date_format:Y-m-d|after:today'
-            ]);
-
             $sobrietyDate = SobrietyDate::where('device_id', $deviceId)->first();
 
             if (!$sobrietyDate) {
@@ -166,6 +161,21 @@ class SobrietyDateController extends Controller
                 ], 404);
             }
 
+            // If date is empty => delete record
+            if (!$request->filled('date')) {
+                $sobrietyDate->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sobriety record deleted successfully'
+                ], 200);
+            }
+
+            // Otherwise validate and update
+            $validated = $request->validate([
+                'date' => 'required|date_format:Y-m-d|after:today'
+            ]);
+
             $sobrietyDate->update(['date' => $validated['date']]);
 
             return response()->json([
@@ -173,7 +183,6 @@ class SobrietyDateController extends Controller
                 'message' => 'Sobriety date updated successfully',
                 'data' => $sobrietyDate->fresh()
             ], 200);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -187,6 +196,7 @@ class SobrietyDateController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * @OA\Get(
@@ -244,7 +254,6 @@ class SobrietyDateController extends Controller
                 'message' => 'Sobriety date retrieved successfully',
                 'data' => $sobrietyDate
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
